@@ -1,118 +1,149 @@
-﻿using System;
+﻿using S7Scanner.Lib.Helpers;
+using S7Scanner.Lib.IpScannerService;
+using S7Scanner.Lib.Models;
+using System.CommandLine;
 using System.Diagnostics;
 using System.Text.Json;
-using System.CommandLine;
-using S7Scanner.Lib.Helpers;
-using S7Scanner.Lib.IpScanner;
 
-namespace S7Scanner.CLI
+namespace S7Scanner.CLI;
+
+internal static class Program
 {
-    static class Program
+    private static async Task<int> Main(string[] args)
     {
-        private const int SiemensPlcPort = 102;
-
-        static async Task<int> Main(string[] args)
+        var ipRangeOption = new Option<string>(
+            name: "--ip-range")
         {
-            var ipRangeOption = new Option<string>(
-                name: "--ip-range")
-            {
-                Description = "The IP range to scan (e.g., '192.168.1.1-192.168.1.254').",
-                Required = true,
-                AllowMultipleArgumentsPerToken = false
-            };
+            Description = "The IP range to scan (e.g., '192.168.1.1-192.168.1.254').",
+            Required = true,
+            AllowMultipleArgumentsPerToken = false
+        };
 
-            var outputFileOption = new Option<FileInfo>(
-                name: "--output-file")
-            {
-                Description = "Optional. Path to save the results as a JSON file."
-            };
+        var outputFileOption = new Option<FileInfo>(
+            name: "--output-file")
+        {
+            Description = "Optional. Path to save the results as a JSON file."
+        };
 
-            var rootCommand = new RootCommand($"Scans an IP range for open TCP port {SiemensPlcPort} (Siemens S7).");
-            rootCommand.Options.Add(ipRangeOption);
-            rootCommand.Options.Add(outputFileOption);
+        var timeoutOption = new Option<int>(
+            name: "--timeout")
+        {
+            Description = "Connection timeout in milliseconds for each IP.",
+            DefaultValueFactory = (_) => 500
+        };
 
-            rootCommand.SetAction(async (parseResult, cancellationToken) => await ExecuteScan(parseResult!.GetValue(ipRangeOption)!, parseResult!.GetValue(outputFileOption)!, cancellationToken));
+        var parallelismOption = new Option<int>(
+            name: "--parallelism")
+        {
+            Description = "Number of IPs to scan concurrently.",
+            DefaultValueFactory = (_) => 100
+        };
 
-            CommandLineConfiguration configuration = new(rootCommand)
-            {
-                Output = new StringWriter(),
-                Error = TextWriter.Null
-            };
+        var rootCommand = new RootCommand("Scans an IP range for Siemens devices and classifies them as PLC or HMI.");
 
-            return await configuration.InvokeAsync(args);
+        rootCommand.Options.Add(ipRangeOption);
+        rootCommand.Options.Add(outputFileOption);
+        rootCommand.Options.Add(timeoutOption);
+        rootCommand.Options.Add(parallelismOption);
+
+        rootCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var ipRange = parseResult.GetValue(ipRangeOption)!;
+            var outputFile = parseResult.GetValue(outputFileOption);
+            var timeout = parseResult.GetValue(timeoutOption);
+            var parallelism = parseResult.GetValue(parallelismOption);
+
+            await ExecuteScan(ipRange, outputFile, timeout, parallelism, cancellationToken);
+        });
+
+        return await rootCommand.Parse(args).InvokeAsync();
+    }
+
+    private static async Task ExecuteScan(string ipRange, FileInfo? outputFile, int timeout, int parallelism, CancellationToken cancellationToken)
+    {
+        Console.WriteLine("Starting Siemens Device Scanner...");
+        Console.WriteLine($"IP Range: {ipRange}");
+        Console.WriteLine($"Timeout: {timeout}ms | Parallelism: {parallelism}");
+        if (outputFile != null)
+        {
+            Console.WriteLine($"Output File: {outputFile.FullName}");
         }
+        Console.WriteLine("---------------------------------------------");
 
-        private static async Task ExecuteScan(string ipRange, FileInfo outputFile, CancellationToken cancellationToken)
+        var stopwatch = Stopwatch.StartNew();
+
+        try
         {
-            Console.WriteLine("Starting IP Scanner for Siemens PLCs...");
-            Console.WriteLine($"Target Port: {SiemensPlcPort}");
-            Console.WriteLine($"IP Range: {ipRange}");
+            var ipsToScan = IpRangeParser.Parse(ipRange);
+            var foundDevices = (await IpScannerService.DiscoverDevicesAsync(
+                ipsToScan,
+                timeout,
+                parallelism,
+                cancellationToken)).ToList();
+
+            stopwatch.Stop();
+            Console.WriteLine("---------------------------------------------");
+            Console.WriteLine($"Scan complete in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
+
+            if (foundDevices.Count == 0)
+            {
+                Console.WriteLine("No devices found.");
+                return;
+            }
+
+            Console.WriteLine($"Found {foundDevices.Count} device(s):");
+            foreach (var device in foundDevices)
+            {
+                Console.WriteLine($"  - {device.IpAddress,-15} | Type: {device.Type}");
+            }
+
             if (outputFile != null)
             {
-                Console.WriteLine($"Output File: {outputFile.FullName}");
-            }
-            Console.WriteLine("---------------------------------------------");
-
-            var stopwatch = Stopwatch.StartNew();
-            var cts = new CancellationTokenSource();
-            Console.CancelKeyPress += (s, e) =>
-            {
-                Console.WriteLine("Cancellation requested. Finishing in-progress tasks...");
-                cts.Cancel();
-                e.Cancel = true;
-            };
-
-            try
-            {
-                var parser = new IpRangeParser();
-                var scanner = new IpScannerService();
-
-                var ipsToScan = parser.Parse(ipRange);
-                var foundIps = await scanner.ScanAsync(ipsToScan, SiemensPlcPort, cts.Token);
-
-                stopwatch.Stop();
-                Console.WriteLine("---------------------------------------------");
-                Console.WriteLine($"Scan complete in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
-
-                if (!foundIps.Any())
-                {
-                    Console.WriteLine("No devices found with port 102 open.");
-                    return;
-                }
-
-                Console.WriteLine($"Found {foundIps.Count()} device(s):");
-                var foundIpStrings = foundIps.Select(ip => ip.ToString()).ToList();
-                foundIpStrings.ForEach(Console.WriteLine);
-
-                if (outputFile != null)
-                {
-                    await WriteResultsToFile(foundIpStrings, outputFile.FullName);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"\nAn error occurred: {ex.Message}");
-                Console.ResetColor();
+                await WriteResultsToFile(foundDevices, outputFile.FullName);
             }
         }
-
-        private static async Task WriteResultsToFile(List<string> ips, string filePath)
+        catch (OperationCanceledException)
         {
-            try
+            Console.WriteLine("\nScan was cancelled by the user.");
+        }
+        catch (Exception ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"\nAn error occurred: {ex.Message}");
+            Console.ResetColor();
+        }
+    }
+
+    private static async Task WriteResultsToFile(List<DiscoveredDevice> devices, string filePath)
+    {
+        try
+        {
+            JsonSerializerOptions jsonSerializerOptions = new() { WriteIndented = true };
+            var options = jsonSerializerOptions;
+            var jsonData = new
             {
-                var options = new JsonSerializerOptions { WriteIndented = true };
-                var jsonData = new { FoundIps = ips };
-                string jsonString = JsonSerializer.Serialize(jsonData, options);
-                await File.WriteAllTextAsync(filePath, jsonString);
-                Console.WriteLine($"\nResults successfully written to {filePath}");
-            }
-            catch (Exception ex)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"\nFailed to write to output file: {ex.Message}");
-                Console.ResetColor();
-            }
+                ScanSummary = new
+                {
+                    Timestamp = DateTime.UtcNow,
+                    DeviceCount = devices.Count,
+                    PlcCount = devices.Count(d => d.Type == DeviceType.PLC),
+                    HmiCount = devices.Count(d => d.Type == DeviceType.HMI),
+                },
+                DiscoveredDevices = devices.ConvertAll(d => new
+                {
+                    IpAddress = d.IpAddress.ToString(),
+                    Type = d.Type.ToString()
+                })            };
+
+            string jsonString = JsonSerializer.Serialize(jsonData, options);
+            await File.WriteAllTextAsync(filePath, jsonString);
+            Console.WriteLine($"\nResults successfully written to {filePath}");
+        }
+        catch (Exception ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"\nFailed to write to output file: {ex.Message}");
+            Console.ResetColor();
         }
     }
 }
