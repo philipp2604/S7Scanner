@@ -27,68 +27,72 @@ public class IpRangeParser
             throw new ArgumentException("IP range cannot be empty.", nameof(ipRange));
         }
 
-        // Handle single IP address
+        // --- Eager Validation for Single IP ---
         if (!ipRange.Contains('-'))
         {
+            // STEP 1: Perform our own STRICT format check first.
+            // An IPv4 address MUST have exactly 3 dots (4 parts).
+            // This will correctly reject "192.168.1".
+            if (ipRange.Split('.').Length != 4)
+            {
+                throw new FormatException("Invalid IP address format. A four-part dotted-quad string is required.");
+            }
+
+            // STEP 2: Now that we know the format is plausible, use TryParse.
             if (IPAddress.TryParse(ipRange, out var singleIp))
             {
-                yield return singleIp;
+                return new[] { singleIp };
             }
+
+            // If we get here, the format was 4 parts but something else was wrong (e.g., "a.b.c.d").
             throw new FormatException("Invalid IP address format.");
         }
 
-        // Handle IP range
+        // --- If we are here, it's a range. Delegate to the iterator. ---
+        return ParseRangeInternal(ipRange);
+    }
+
+    private static IEnumerable<IPAddress> ParseRangeInternal(string ipRange)
+    {
+        // This helper can now assume the input string contains a '-'.
         var parts = ipRange.Split('-');
         if (parts.Length != 2)
         {
             throw new FormatException("Invalid IP range format. Use 'startIP-endIP'.");
         }
 
-        if (!IPAddress.TryParse(parts[0], out var startIp) || !IPAddress.TryParse(parts[1], out var endIp))
+        string startIpString = parts[0];
+        string endIpString = parts[1];
+
+        // Apply our strict validation to both parts of the range.
+        if (startIpString.Split('.').Length != 4 || endIpString.Split('.').Length != 4)
+        {
+            throw new FormatException("Invalid IP address format in range. Both IPs must be four-part dotted-quad strings.");
+        }
+
+        if (!IPAddress.TryParse(startIpString, out var startIp) || !IPAddress.TryParse(endIpString, out var endIp))
         {
             throw new FormatException("Invalid IP address in range.");
         }
 
-        // Ensure IPs are of the same family (IPv4/IPv6)
+        // (The rest of your correct range logic follows)
         if (startIp.AddressFamily != endIp.AddressFamily)
-        {
             throw new ArgumentException("Start and end IP addresses must be of the same family.");
-        }
 
         var startBytes = startIp.GetAddressBytes();
         var endBytes = endIp.GetAddressBytes();
 
-        // Ensure start IP is not greater than end IP
         for (int i = 0; i < startBytes.Length; i++)
         {
-            if (startBytes[i] > endBytes[i])
-            {
-                throw new ArgumentException("Start IP cannot be greater than end IP.");
-            }
-            if (startBytes[i] < endBytes[i])
-            {
-                break;
-            }
+            if (startBytes[i] > endBytes[i]) throw new ArgumentException("Start IP cannot be greater than end IP.");
+            if (startBytes[i] < endBytes[i]) break;
         }
 
-        var currentIpBytes = startBytes;
+        var currentIpBytes = (byte[])startBytes.Clone();
         while (true)
         {
             yield return new IPAddress(currentIpBytes);
-
-            // Check if current IP is the end IP
-            bool isEndIp = true;
-            for (int i = 0; i < currentIpBytes.Length; i++)
-            {
-                if (currentIpBytes[i] != endBytes[i])
-                {
-                    isEndIp = false;
-                    break;
-                }
-            }
-            if (isEndIp) break;
-
-            // Increment the IP address
+            if (currentIpBytes.SequenceEqual(endBytes)) break;
             for (int i = currentIpBytes.Length - 1; i >= 0; i--)
             {
                 currentIpBytes[i]++;

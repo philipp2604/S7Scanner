@@ -7,8 +7,16 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace S7Scanner.Lib.IpScanner;
-public class IpScannerService
+namespace S7Scanner.Lib.IpScannerService;
+
+/// <summary>
+/// Provides functionality to scan a range of IP addresses for Siemens devices and classify them as PLC or HMI.
+/// </summary>
+/// <remarks>This service is designed to identify Siemens devices by scanning specified IP addresses and checking
+/// for open ports. It uses the default Siemens S7 port (102) to detect potential devices and additional ports to
+/// classify them as PLC or HMI. The scanning process supports parallel execution and can be canceled using a <see
+/// cref="CancellationToken"/>.</remarks>
+public static class IpScannerService
 {
     private const int DefaultTimeoutMs = 1000;
     private const int MaxDegreeOfParallelism = 100;

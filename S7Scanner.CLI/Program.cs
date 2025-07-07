@@ -3,7 +3,8 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.CommandLine;
 using S7Scanner.Lib.Helpers;
-using S7Scanner.Lib.IpScanner;
+using S7Scanner.Lib.IpScannerService;
+using S7Scanner.Lib.Models;
 
 namespace S7Scanner.CLI
 {
