@@ -2,7 +2,7 @@
 
 namespace S7Scanner.Lib.Helpers;
 
-public class IpRangeParser
+public static class IpRangeParser
 {
     /// <summary>
     /// Parses a string representing an IP address or a range of IP addresses and returns the corresponding sequence of
@@ -20,7 +20,7 @@ public class IpRangeParser
     /// addresses in the range are not of the same address family.</exception>
     /// <exception cref="FormatException">Thrown if <paramref name="ipRange"/> is not a valid IP address or range format, or if any IP address in the
     /// range is invalid.</exception>
-    public IEnumerable<IPAddress> Parse(string ipRange)
+    public static IEnumerable<IPAddress> Parse(string ipRange)
     {
         if (string.IsNullOrWhiteSpace(ipRange))
         {
