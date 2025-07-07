@@ -1,11 +1,12 @@
 ﻿# S7Scanner 📡
 A modern, high-performance .NET library for discovering Siemens S7 devices (PLCs and HMIs) across a network. It provides a simple, asynchronous API to scan IP ranges, identify potential Siemens devices, and classify them. The project also includes a ready-to-use command-line tool.
 
-[![.NET Build & Test](https://github.com/YOUR_USERNAME/S7Scanner/actions/workflows/dotnet.yml/badge.svg)](https://github.com/YOUR_USERNAME/S7Scanner/actions/workflows/dotnet.yml)
+[![.NET 8 (LTS) Build & Test](https://github.com/philipp2604/S7Scanner/actions/workflows/dotnet-8-build-and-test.yml/badge.svg)](https://github.com/philipp2604/S7Scanner/actions/workflows/dotnet-8-build-and-test.yml)
+[![.NET 9 (Latest) Build & Test](https://github.com/philipp2604/S7Scanner/actions/workflows/dotnet-9-build-and-test.yml/badge.svg)](https://github.com/philipp2604/S7Scanner/actions/workflows/dotnet-9-build-and-test.yml)
 [![Language](https://img.shields.io/badge/language-C%23-blue.svg)](https://docs.microsoft.com/en-us/dotnet/csharp/)
-[![NuGet Version](https://img.shields.io/nuget/v/Your.S7Scanner.Package.svg?style=flat-square&logo=nuget)](https://www.nuget.org/packages/Your.S7Scanner.Package/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub issues](https://img.shields.io/github/issues/YOUR_USERNAME/S7Scanner)](https://github.com/YOUR_USERNAME/S7Scanner/issues)
+[![NuGet Version](https://img.shields.io/nuget/v/philipp2604.S7Scanner.Lib.svg?style=flat-square&logo=nuget)](https://www.nuget.org/packages/philipp2604.S7Scanner.Lib/)
+[![License](https://img.shields.io/badge/License-GPL_v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+[![GitHub issues](https://img.shields.io/github/issues/philipp2604/S7Scanner)](https://github.com/philipp2604/S7Scanner/issues)
 
 ## ✨ Key Features
 
