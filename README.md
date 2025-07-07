@@ -5,7 +5,7 @@ A modern, high-performance .NET library for discovering Siemens S7 devices (PLCs
 [![.NET 9 (Latest) Build & Test](https://github.com/philipp2604/S7Scanner/actions/workflows/dotnet-9-build-and-test.yml/badge.svg)](https://github.com/philipp2604/S7Scanner/actions/workflows/dotnet-9-build-and-test.yml)
 [![Language](https://img.shields.io/badge/language-C%23-blue.svg)](https://docs.microsoft.com/en-us/dotnet/csharp/)
 [![NuGet Version](https://img.shields.io/nuget/v/philipp2604.S7Scanner.Lib.svg?style=flat-square&logo=nuget)](https://www.nuget.org/packages/philipp2604.S7Scanner.Lib/)
-[![License](https://img.shields.io/badge/License-GPL_v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub issues](https://img.shields.io/github/issues/philipp2604/S7Scanner)](https://github.com/philipp2604/S7Scanner/issues)
 
 ## ✨ Key Features
