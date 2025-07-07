@@ -1,8 +1,7 @@
-﻿using System.Net;
-using S7Scanner.Lib.Helpers;
-using Xunit;
+﻿using S7Scanner.Lib.Helpers;
+using System.Net;
 
-namespace S7Scanner.UnitTests.Lib.Helpers;
+namespace S7Scanner.UnitTests.Helpers;
 
 public class IpRangeParserTests
 {
@@ -66,7 +65,6 @@ public class IpRangeParserTests
         Assert.Throws<ArgumentException>(() => IpRangeParser.Parse(range).ToList());
     }
 
-    
     [Theory]
     [InlineData("192.168.1.1-b.c.d")]
     [InlineData("192.168.1")]

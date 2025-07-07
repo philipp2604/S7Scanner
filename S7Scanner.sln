@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "S7Scanner.Lib", "S7Scanner.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "S7Scanner.UnitTests", "S7Scanner.UnitTests\S7Scanner.UnitTests.csproj", "{AF766D7D-3E4D-44A5-8B39-06E397660402}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "S7Scanner.IntegrationTests", "S7Scanner.IntegrationTests\S7Scanner.IntegrationTests.csproj", "{97CCF5DB-118D-41A1-BDC2-E07B290F5BA6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "S7Scanner.IntegrationTests", "S7Scanner.IntegrationTests\S7Scanner.IntegrationTests.csproj", "{F5592538-870B-F637-5C20-D4F810F8239D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,10 +29,10 @@ Global
 		{AF766D7D-3E4D-44A5-8B39-06E397660402}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AF766D7D-3E4D-44A5-8B39-06E397660402}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AF766D7D-3E4D-44A5-8B39-06E397660402}.Release|Any CPU.Build.0 = Release|Any CPU
-		{97CCF5DB-118D-41A1-BDC2-E07B290F5BA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{97CCF5DB-118D-41A1-BDC2-E07B290F5BA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{97CCF5DB-118D-41A1-BDC2-E07B290F5BA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{97CCF5DB-118D-41A1-BDC2-E07B290F5BA6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F5592538-870B-F637-5C20-D4F810F8239D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5592538-870B-F637-5C20-D4F810F8239D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F5592538-870B-F637-5C20-D4F810F8239D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F5592538-870B-F637-5C20-D4F810F8239D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -2,7 +2,7 @@
 
 namespace S7Scanner.Lib.Helpers;
 
-public class IpRangeParser
+public static class IpRangeParser
 {
     /// <summary>
     /// Parses a string representing an IP address or a range of IP addresses and returns the corresponding sequence of
@@ -20,7 +20,7 @@ public class IpRangeParser
     /// addresses in the range are not of the same address family.</exception>
     /// <exception cref="FormatException">Thrown if <paramref name="ipRange"/> is not a valid IP address or range format, or if any IP address in the
     /// range is invalid.</exception>
-    public IEnumerable<IPAddress> Parse(string ipRange)
+    public static IEnumerable<IPAddress> Parse(string ipRange)
     {
         if (string.IsNullOrWhiteSpace(ipRange))
         {
@@ -28,33 +28,15 @@ public class IpRangeParser
         }
 
         // --- Eager Validation for Single IP ---
-        if (!ipRange.Contains('-'))
-        {
-            // STEP 1: Perform our own STRICT format check first.
-            // An IPv4 address MUST have exactly 3 dots (4 parts).
-            // This will correctly reject "192.168.1".
-            if (ipRange.Split('.').Length != 4)
-            {
-                throw new FormatException("Invalid IP address format. A four-part dotted-quad string is required.");
-            }
-
-            // STEP 2: Now that we know the format is plausible, use TryParse.
-            if (IPAddress.TryParse(ipRange, out var singleIp))
-            {
-                return new[] { singleIp };
-            }
-
-            // If we get here, the format was 4 parts but something else was wrong (e.g., "a.b.c.d").
-            throw new FormatException("Invalid IP address format.");
-        }
-
-        // --- If we are here, it's a range. Delegate to the iterator. ---
-        return ParseRangeInternal(ipRange);
+        return !ipRange.Contains('-')
+            ? ipRange.Split('.').Length != 4
+                ? throw new FormatException("Invalid IP address format. A four-part dotted-quad string is required.")
+                : IPAddress.TryParse(ipRange, out var singleIp) ? (IEnumerable<IPAddress>)([singleIp]) : throw new FormatException("Invalid IP address format.")
+            : ParseRangeInternal(ipRange);
     }
 
     private static IEnumerable<IPAddress> ParseRangeInternal(string ipRange)
     {
-        // This helper can now assume the input string contains a '-'.
         var parts = ipRange.Split('-');
         if (parts.Length != 2)
         {
@@ -64,7 +46,6 @@ public class IpRangeParser
         string startIpString = parts[0];
         string endIpString = parts[1];
 
-        // Apply our strict validation to both parts of the range.
         if (startIpString.Split('.').Length != 4 || endIpString.Split('.').Length != 4)
         {
             throw new FormatException("Invalid IP address format in range. Both IPs must be four-part dotted-quad strings.");
@@ -75,7 +56,6 @@ public class IpRangeParser
             throw new FormatException("Invalid IP address in range.");
         }
 
-        // (The rest of your correct range logic follows)
         if (startIp.AddressFamily != endIp.AddressFamily)
             throw new ArgumentException("Start and end IP addresses must be of the same family.");
 
