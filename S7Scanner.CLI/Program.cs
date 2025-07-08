@@ -1,9 +1,10 @@
 ﻿using S7Scanner.Lib.Helpers;
-using S7Scanner.Lib.IpScannerService;
 using S7Scanner.Lib.Models;
+using S7Scanner.Lib.Services;
 using System.CommandLine;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace S7Scanner.CLI;
 
@@ -75,7 +76,7 @@ internal static class Program
         try
         {
             var ipsToScan = IpRangeParser.Parse(ipRange);
-            var foundDevices = (await IpScannerService.DiscoverDevicesAsync(
+            var foundDevices = (await S7ScannerService.DiscoverDevicesAsync(
                 ipsToScan,
                 timeout,
                 parallelism,
@@ -94,7 +95,21 @@ internal static class Program
             Console.WriteLine($"Found {foundDevices.Count} device(s):");
             foreach (var device in foundDevices)
             {
+                Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"  - {device.IpAddress,-15} | Type: {device.Type}");
+                Console.ResetColor();
+
+                if (device.Details != null)
+                {
+                    Console.WriteLine($"    {"Module:",-22} {device.Details.Module}");
+                    Console.WriteLine($"    {"Basic Hardware:",-22} {device.Details.BasicHardware}");
+                    Console.WriteLine($"    {"System Name:",-22} {device.Details.SystemName}");
+                    Console.WriteLine($"    {"Module Type:",-22} {device.Details.ModuleType}");
+                    Console.WriteLine($"    {"Serial Number:",-22} {device.Details.SerialNumber}");
+                    Console.WriteLine($"    {"Version:",-22} {device.Details.Version}");
+                    Console.WriteLine($"    {"Plant Identification:",-22} {device.Details.PlantIdentification}");
+                    Console.WriteLine($"    {"Copyright:",-22} {device.Details.Copyright}");
+                }
             }
 
             if (outputFile != null)
@@ -118,7 +133,12 @@ internal static class Program
     {
         try
         {
-            JsonSerializerOptions jsonSerializerOptions = new() { WriteIndented = true };
+            JsonSerializerOptions jsonSerializerOptions = new()
+            {
+                WriteIndented = true,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+                Converters = { new JsonStringEnumConverter() }
+            };
             var options = jsonSerializerOptions;
             var jsonData = new
             {
@@ -132,8 +152,10 @@ internal static class Program
                 DiscoveredDevices = devices.ConvertAll(d => new
                 {
                     IpAddress = d.IpAddress.ToString(),
-                    Type = d.Type.ToString()
-                })            };
+                    Type = d.Type.ToString(),
+                    d.Details
+                })
+            };
 
             string jsonString = JsonSerializer.Serialize(jsonData, options);
             await File.WriteAllTextAsync(filePath, jsonString);

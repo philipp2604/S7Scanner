@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 
-namespace S7Scanner.Lib.IpScannerService;
+namespace S7Scanner.Lib.Services;
 
 /// <summary>
 /// Provides functionality to scan a range of IP addresses for Siemens devices and classify them as PLC or HMI.
@@ -15,7 +15,7 @@ namespace S7Scanner.Lib.IpScannerService;
 /// classify them as PLC or HMI. The scanning process supports parallel execution and can be canceled using a <see
 /// cref="CancellationToken"/>.
 /// </remarks>
-public static class IpScannerService
+public static class S7ScannerService
 {
     // The default Siemens S7 port.
     private const int _siemensS7Port = 102;
@@ -49,8 +49,6 @@ public static class IpScannerService
         {
             if (await IsPortOpenAsync(ip, _siemensS7Port, timeoutMs, token))
             {
-                Console.WriteLine($"[CANDIDATE] Found device at {ip}. Checking device type...");
-
                 // Stage 2: Classify the device as PLC or HMI.
                 bool isHmi = false;
                 foreach (var hmiPort in _hmiPorts)
@@ -58,13 +56,31 @@ public static class IpScannerService
                     if (await IsPortOpenAsync(ip, hmiPort, timeoutMs, token))
                     {
                         isHmi = true;
-                        Console.WriteLine($"[HMI DETECTED] Host {ip} has HMI port {hmiPort} open.");
                         break;
                     }
                 }
 
-                var deviceType = isHmi ? DeviceType.HMI : DeviceType.PLC;
-                discoveredDevices.Add(new DiscoveredDevice(ip, deviceType));
+                if (isHmi)
+                {
+                    // If it's an HMI, add it and we're done with this IP.
+                    discoveredDevices.Add(new DiscoveredDevice(ip, DeviceType.HMI));
+                }
+                else
+                {
+                    // If it's not an HMI, it's a PLC. Try to get details.
+                    var details = await PlcDetailsService.GetPlcDetailsAsync(ip, _siemensS7Port, timeoutMs) ?? new()
+                    {
+                        BasicHardware = "Potential S7-1200/-1500",
+                        Copyright = "Potential S7-1200/-1500",
+                        Module = "Potential S7-1200/-1500",
+                        ModuleType = "Potential S7-1200/-1500",
+                        PlantIdentification = "Potential S7-1200/-1500",
+                        SerialNumber = "Potential S7-1200/-1500",
+                        SystemName = "Potential S7-1200/-1500",
+                        Version = "Potential S7-1200/-1500"
+                    };
+                    discoveredDevices.Add(new DiscoveredDevice(ip, DeviceType.PLC, details));
+                }
             }
         });
 
