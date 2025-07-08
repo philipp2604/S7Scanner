@@ -1,5 +1,5 @@
 ﻿# S7Scanner 📡
-A modern, high-performance .NET library for discovering Siemens S7 devices (PLCs and HMIs) across a network. It provides a simple, asynchronous API to scan IP ranges, identify potential Siemens devices, and classify them. The project also includes a ready-to-use command-line tool.
+A modern, high-performance .NET library for discovering Siemens S7 devices (PLCs and HMIs) across a network. It provides a simple, asynchronous API to scan IP ranges, identify potential Siemens devices, and classify them, and retrieve detailed hardware information from compatible PLCs. The project also includes a ready-to-use command-line tool.
 
 [![.NET 8 (LTS) Build & Test](https://github.com/philipp2604/S7Scanner/actions/workflows/dotnet-8-build-and-test.yml/badge.svg)](https://github.com/philipp2604/S7Scanner/actions/workflows/dotnet-8-build-and-test.yml)
 [![.NET 9 (Latest) Build & Test](https://github.com/philipp2604/S7Scanner/actions/workflows/dotnet-9-build-and-test.yml/badge.svg)](https://github.com/philipp2604/S7Scanner/actions/workflows/dotnet-9-build-and-test.yml)
@@ -11,7 +11,9 @@ A modern, high-performance .NET library for discovering Siemens S7 devices (PLCs
 ## ✨ Key Features
 
 - **⚡️ High-Speed Parallel Scanning**: Utilizes modern `async`/`await` and `Parallel.ForEachAsync` to scan hundreds of IP addresses concurrently, delivering results quickly.
-- **🔬 Accurate Device Classification**: Intelligently distinguishes between Siemens PLCs and HMIs by checking for the standard S7 communication port (102) and a set of known HMI-specific ports.
+- **🔬 Detailed Device Identification**: Intelligently distinguishes between Siemens PLCs and HMIs. For PLCs, it actively queries for detailed hardware information.
+    - **Full Details for S7-300/400**: Retrieves module info, serial number, system name, and version from S7-300 PLCs using the S7-COMM protocol.
+    - **Identifies S7-1200/1500**: Detects modern PLCs that normally restrict detailed queries, marking them as "Potential S7-1200/-1500".
 - **〰️ Flexible IP Range Parsing**: Easily parse various input formats, including single IP addresses (`192.168.0.1`) and complex ranges (`192.168.0.1-192.168.1.254`).
 - **🖥️ Ready-to-Use CLI**: Includes a powerful and easy-to-use command-line interface for immediate scanning without writing any code.
 - **🏗️ Modern & Asynchronous API**: A fully `async` and thread-safe library built with modern C# features, including records for immutable data transfer objects.
@@ -69,6 +71,12 @@ try
         foreach (var device in discoveredDevices)
         {
             Console.WriteLine($"  - IP: {device.IpAddress,-15} | Type: {device.Type}");
+            // Display PLC details if they were retrieved
+            if (device.Details != null)
+            {
+                Console.WriteLine($"    - Module: {device.Details.Module}");
+                Console.WriteLine($"    - Serial Number: {device.Details.SerialNumber}");
+            }
         }
     }
 }
@@ -107,10 +115,31 @@ S7Scanner.CLI.exe --ip-range <RANGE> [--output-file <PATH>] [--timeout <MS>] [--
 ./S7Scanner.CLI.exe --ip-range "10.0.0.1-10.0.255.254" --timeout 1000 --parallelism 200 --output-file "scan_results.json"
 ```
 
+### Example Output
+
+```bash
+# Scan a C-class network and print results to the console
+./S7Scanner.CLI.exe --ip-range "192.168.0.1-192.168.0.254"
+
+# Example Console Output:
+# Starting Siemens Device Scanner...
+# ...
+# Found 3 device(s):
+#   - 192.168.0.2     | Type: PLC
+#     Module:               6ES7 315-2EH14-0AB0
+#     Serial Number:        S C-U9B12345678
+#     ...
+#   - 192.168.0.3     | Type: HMI
+#   - 192.168.0.5     | Type: PLC
+#     Module:               Potential S7-1200/-1500
+#     Serial Number:        Potential S7-1200/-1500
+#     ...
+```
+
 ## 📖 Documentation
-- **[IpScannerService](./S7Scanner.Lib/IpScannerService/IpScannerService.cs)**: The `IpScannerService` is the primary entry point for all scanning operations.
+- **[S7ScannerService](./S7Scanner.Lib/S7ScannerService/S7ScannerService.cs)**: The `S7ScannerService` is the primary entry point for all scanning operations.
 - **[CLI Example](./S7Scanner.CLI/Program.cs)**: A runnable console application demonstrating library usage in detail.
-- **[Integration Tests](./S7Scanner.IntegrationTests/IpScanner/IpScannerServiceIntegrationTests.cs)**: These tests showcase real-world usage patterns against a live network and serve as excellent, practical examples.
+- **[Integration Tests](./S7Scanner.IntegrationTests/IpScanner/S7ScannerServiceIntegrationTests.cs)**: These tests showcase real-world usage patterns against a live network and serve as excellent, practical examples.
 
 ## 🤝 Contributing
 

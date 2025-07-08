@@ -7,4 +7,5 @@ namespace S7Scanner.Lib.Models;
 /// </summary>
 /// <param name="IpAddress">The IP address of the device.</param>
 /// <param name="Type">The determined type of the device (PLC or HMI).</param>
-public record DiscoveredDevice(IPAddress IpAddress, DeviceType Type);
+/// <param name="Details">Details if the device is a PLC.</param>
+public record DiscoveredDevice(IPAddress IpAddress, DeviceType Type, PlcDetails? Details = null);
